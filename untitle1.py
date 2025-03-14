@@ -29,11 +29,14 @@ try:
         print("Error clicking latest button:", e)
 
     # 스크롤을 통해 더 많은 댓글 로드
-    scroll_limit = 200  # 스크롤을 수행할 최대 횟수 증가
+    scroll_limit = 500  # 스크롤을 수행할 최대 횟수 증가
     scroll_count = 0
     last_height = driver.execute_script("return document.body.scrollHeight")
     while scroll_count < scroll_limit:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        current_height = driver.execute_script("return window.pageYOffset;")
+        # 스크롤을 일정 픽셀만큼 내립니다.
+        driver.execute_script("window.scrollBy(0, 100);")  # 500 픽셀씩 스크롤
         time.sleep(5)  # 새로운 콘텐츠가 로드될 시간을 늘림
 
         new_height = driver.execute_script("return document.body.scrollHeight")
@@ -50,14 +53,14 @@ try:
     soup = BeautifulSoup(page_source, 'html.parser')
 
     # 댓글 텍스트 요소를 찾습니다.
-    comments = soup.select('div._1p19xcx1')
+    comments = soup.select('div._1p19xcx1')  # 실제 클래스명으로 변경
 
     # 댓글 텍스트와 날짜를 추출합니다.
     comment_list = []
     for comment in comments:
         try:
             # 텍스트 추출
-            text_element = comment.select_one('span.tw-1r5dc8g0._60z0ev1._60z0ev6._60z0ev0._1tvp9v41._1sihfl60')
+            text_element = comment.select_one('span.tw-1r5dc8g0._60z0ev1._60z0ev6._60z0ev0._1tvp9v41._1sihfl60')  # 실제 클래스명으로 변경
             text = text_element.get_text(strip=True) if text_element else "No text"
             
             # 시간 정보 추출 및 변환
