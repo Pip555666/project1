@@ -5,6 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
+from datetime import datetime, timedelta
+import re
 
 # Selenium 설정
 driver = webdriver.Chrome()  # 크롬 드라이버 경로를 지정해야 할 수 있습니다.
@@ -17,7 +19,6 @@ try:
 
     # 최신순 버튼 클릭
     try:
-        # 정확한 XPath를 사용하여 요소가 나타날 때까지 기다립니다.
         latest_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, '//*[@id="stock-content"]/div/div/section/section/section/button'))
         )
@@ -28,18 +29,16 @@ try:
         print("Error clicking latest button:", e)
 
     # 스크롤을 통해 더 많은 댓글 로드
-    scroll_limit = 10  # 스크롤을 수행할 최대 횟수 증가
+    scroll_limit = 200  # 스크롤을 수행할 최대 횟수 증가
     scroll_count = 0
     last_height = driver.execute_script("return document.body.scrollHeight")
     while scroll_count < scroll_limit:
-        # 스크롤을 끝까지 내립니다.
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(3)  # 새로운 콘텐츠가 로드될 시간을 늘림
+        time.sleep(5)  # 새로운 콘텐츠가 로드될 시간을 늘림
 
-        # 새로운 높이를 계산하고, 이전 높이와 비교합니다.
         new_height = driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
-            break  # 더 이상 새로운 콘텐츠가 없으면 종료
+            break
         last_height = new_height
         scroll_count += 1
 
@@ -58,12 +57,16 @@ try:
     for comment in comments:
         try:
             # 텍스트 추출
-            text_element = comment.select_one('span.tw-1r5dc8g0._60z0ev1._60z0ev6._60z0ev0._1tvp9v41._1sihfl60')  # 실제 클래스명으로 변경
+            text_element = comment.select_one('span.tw-1r5dc8g0._60z0ev1._60z0ev6._60z0ev0._1tvp9v41._1sihfl60')
             text = text_element.get_text(strip=True) if text_element else "No text"
             
-            # 날짜 정보 추출
-            date_element = comment.select_one('span.tw-1r5dc8g0')
-            date_info = date_element.get_text(strip=True) if date_element else "No date"
+            # 시간 정보 추출 및 변환
+            time_element = comment.select_one('time._1tvp9v40')
+            if time_element:
+                # datetime 속성에서 절대 시간 추출
+                date_info = time_element['datetime']
+            else:
+                date_info = "Unknown time"
             
             comment_list.append({'Text': text, 'Date': date_info})
         except AttributeError as e:
@@ -72,9 +75,9 @@ try:
     # 판다스를 사용하여 데이터프레임으로 변환
     df = pd.DataFrame(comment_list)
 
-    # 데이터프레임을 CSV 파일로 저장
-    df.to_csv('comments.csv', index=False, encoding='utf-8-sig')
-    print("Comments saved to CSV.")
+    # 데이터프레임을 CSV 파일로 추가 저장
+    df.to_csv('comments.csv', mode='a', header=False, index=False, encoding='utf-8-sig')
+    print("Comments appended to CSV.")
 
 except Exception as e:
     print("An error occurred:", e)
