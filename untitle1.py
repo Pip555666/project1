@@ -28,7 +28,7 @@ try:
         print("Error clicking latest button:", e)
 
     # 스크롤을 통해 더 많은 댓글 로드
-    scroll_limit = 100  # 스크롤을 수행할 최대 횟수 증가
+    scroll_limit = 10  # 스크롤을 수행할 최대 횟수 증가
     scroll_count = 0
     last_height = driver.execute_script("return document.body.scrollHeight")
     while scroll_count < scroll_limit:
@@ -53,14 +53,19 @@ try:
     # 댓글 텍스트 요소를 찾습니다.
     comments = soup.select('div._1p19xcx1')
 
-    # 댓글 텍스트를 추출합니다.
+    # 댓글 텍스트와 날짜를 추출합니다.
     comment_list = []
     for comment in comments:
         try:
             # 텍스트 추출
             text_element = comment.select_one('span.tw-1r5dc8g0._60z0ev1._60z0ev6._60z0ev0._1tvp9v41._1sihfl60')  # 실제 클래스명으로 변경
             text = text_element.get_text(strip=True) if text_element else "No text"
-            comment_list.append({'Text': text})
+            
+            # 날짜 정보 추출
+            date_element = comment.select_one('span.tw-1r5dc8g0')
+            date_info = date_element.get_text(strip=True) if date_element else "No date"
+            
+            comment_list.append({'Text': text, 'Date': date_info})
         except AttributeError as e:
             print("Error extracting comment data:", e)
 
